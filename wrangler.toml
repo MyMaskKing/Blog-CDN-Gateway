@@ -3,8 +3,8 @@ main = "_worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-# 可以添加自定义的 CDN 节点
-URL = ""
+# 可以添加自定义的 CDN 节点，格式：CDN地址#CDN名称,CDN地址#CDN名称
+URL = "https://cdn1.example.com#CDN1,https://cdn2.example.com#CDN2,https://cdn3.example.com#CDN3"
 # 自定义网站信息
 TITLE = "BlogCDN 智能访问网关"
 NAME = "测试站点" 
