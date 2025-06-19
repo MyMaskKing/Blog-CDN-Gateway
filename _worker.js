@@ -689,6 +689,40 @@ export default {
 			
 						const timeout = 3000;
 			
+						// 添加测速函数
+						async function testLatency(testUrl) {
+							return new Promise((resolve) => {
+								const start = Date.now();
+								const xhr = new XMLHttpRequest();
+								xhr.open('HEAD', testUrl, true);
+								xhr.timeout = timeout;
+
+								xhr.onload = function () {
+									const latency = Date.now() - start;
+									if (xhr.status === 200) {
+										resolve({ url: testUrl, latency });
+									} else {
+										resolve({ url: testUrl, latency: \`状态码: \${xhr.status}\` });
+									}
+								};
+
+								xhr.ontimeout = function () {
+									resolve({ url: testUrl, latency: \`响应超时 \${timeout}ms\` });
+								};
+
+								xhr.onerror = function () {
+									const latency = Date.now() - start;
+									if (xhr.status === 0 && latency > 10 && latency < timeout) {
+										resolve({ url: testUrl, latency });
+									} else {
+										resolve({ url: testUrl, latency: '请求失败' });
+									}
+								};
+
+								xhr.send();
+							});
+						}
+			
 						// 性能监控相关函数
 						const PerformanceMonitor = {
 							startTime: null,
@@ -1439,66 +1473,33 @@ function generateHTMLResponse(path, params, config, urls) {
 
 			const timeout = 3000;
 
-			// 性能监控相关函数
-			const PerformanceMonitor = {
-				startTime: null,
-				measurements: [],
-
-				start() {
-					this.startTime = performance.now();
-				},
-
-				measure(label) {
-					if (!this.startTime) return;
-					const duration = performance.now() - this.startTime;
-					this.measurements.push({
-						label,
-						duration,
-						timestamp: new Date().toISOString()
-					});
-				},
-
-				getReport() {
-					return {
-						measurements: this.measurements,
-						totalDuration: this.measurements.reduce((total, m) => total + m.duration, 0)
-					};
-				}
-			};
-
-			// 修改测速函数，添加性能监控
-			async function testLatency(url) {
-				PerformanceMonitor.start();
+			// 添加测速函数
+			async function testLatency(testUrl) {
 				return new Promise((resolve) => {
 					const start = Date.now();
 					const xhr = new XMLHttpRequest();
-					xhr.open('HEAD', url, true);
+					xhr.open('HEAD', testUrl, true);
 					xhr.timeout = timeout;
 
 					xhr.onload = function () {
 						const latency = Date.now() - start;
-						PerformanceMonitor.measure(\`CDN测速完成: \${url}\`);
 						if (xhr.status === 200) {
-							const cdnInfo = { url, latency };
-							localStorage.setItem('cdnCache', JSON.stringify(saveCDNResult(cdnInfo)));
-							resolve({ url, latency });
+							resolve({ url: testUrl, latency });
 						} else {
-							resolve({ url, latency: \`状态码: \${xhr.status}\` });
+							resolve({ url: testUrl, latency: \`状态码: \${xhr.status}\` });
 						}
 					};
 
 					xhr.ontimeout = function () {
-						resolve({ url, latency: \`响应超时 \${timeout}ms\` });
+						resolve({ url: testUrl, latency: \`响应超时 \${timeout}ms\` });
 					};
 
 					xhr.onerror = function () {
 						const latency = Date.now() - start;
 						if (xhr.status === 0 && latency > 10 && latency < timeout) {
-							const cdnInfo = { url, latency };
-							localStorage.setItem('cdnCache', JSON.stringify(saveCDNResult(cdnInfo)));
-							resolve({ url, latency });
+							resolve({ url: testUrl, latency });
 						} else {
-							resolve({ url, latency: '请求失败' });
+							resolve({ url: testUrl, latency: '请求失败' });
 						}
 					};
 
